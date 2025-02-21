@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>水果老虎机</title>
+    <style>
+        @font-face {
+            font-family: 'CustomFont';
+            src: url('path/to/your/font.ttf') format('truetype'),
+                 url('path/to/your/font.woff') format('woff'),
+                 url('path/to/your/font.woff2') format('woff2');
+        }
+
+        @font-face {
+            font-family: 'PodiumSharp';
+            src: url('001-111PODIUMSharp-8.10.otf') format('opentype');
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: url('machine-bg.png') no-repeat center center;
+            background-size: contain;
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #1a1a1a;
+        }
+
+        .slot-machine {
+            position: absolute;
+            width: 800px;
+            height: 800px;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .machine-body {
+            display: none;
+        }
+
+        .display-container {
+            position: absolute;
+            top: calc(50% + 1px);
+            left: 51.3%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            gap: 25px;
+            width: 390px;
+            height: 194px;
+            padding: 20px;
+            background: transparent;
+            overflow: hidden;
+        }
+
+        .slot {
+            flex: 1;
+            background: rgba(255, 255, 255, 1);
+            border: none;
+            box-shadow: none;
+            height: 194px;
+            position: relative;
+            max-width: 107px;
+            overflow: hidden;
+        }
+
+        .slot .content {
+            width: 100%;
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .slot .content img {
+            width: 73px;
+            height: 73px;
+            object-fit: contain;
+            display: block;
+            margin: 6px 0;
+        }
+
+        .slot .content div {
+            height: 73px;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #000000 !important;
+            font-size: 27px !important;
+            font-weight: bold;
+            margin: 6px 0;
+            font-family: 'PodiumSharp', Arial, sans-serif;
+        }
+
+        .slot::before,
+        .slot::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 70px;
+            z-index: 1;
+        }
+
+        .slot::before {
+            top: 0;
+            background: linear-gradient(to bottom, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0) 100%);
+        }
+
+        .slot::after {
+            bottom: 0;
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0) 100%);
+        }
+
+        @keyframes spin {
+            0% { transform: translate(-50%, -50%) translateY(0); }
+            100% { transform: translate(-50%, -50%) translateY(-100px); }
+        }
+
+        .slot.spinning .content {
+            animation: spin 0.15s linear infinite;
+        }
+
+        .lever {
+            position: absolute;
+            right: 22%;
+            top: 40%;
+            cursor: pointer;
+        }
+
+        .lever img {
+            width: 100px;
+            height: auto;
+        }
+
+        #number-slot .content div {
+            height: 73px;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #000000 !important;
+            font-size: 27px !important;
+            font-weight: bold;
+            margin: 6px 0;
+            font-family: 'PodiumSharp', Arial, sans-serif;
+        }
+
+        .prize-stats {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 320px;
+            background: rgba(138, 43, 226, 0.4);
+            padding: 15px;
+            border-radius: 10px;
+            box-sizing: border-box;
+            transform-origin: top right;
+        }
+
+        #prize-counts {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .prize-count-item {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .prize-count-item img {
+            width: 70px;
+            height: 70px;
+            object-fit: contain;
+            filter: brightness(0) invert(1);
+        }
+
+        .prize-count-item span {
+            display: none;
+        }
+
+        .total-count {
+            border-top: 1px solid rgba(255, 255, 255, 0.3);
+            margin-top: 10px;
+            padding-top: 10px;
+            font-size: 16px;
+            color: white;
+            font-family: 'PodiumSharp', Arial, sans-serif;
+            text-align: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* 修改中奖信息区域的样式 */
+        .win-info {
+            position: fixed;
+            top: 750px;
+            right: 20px;
+            width: 320px;
+            background: rgba(138, 43, 226, 0.4);
+            padding: 15px;
+            border-radius: 10px;
+            box-sizing: border-box;
+            height: 115px;
+            transform-origin: top right;
+        }
+
+        .win-info-title {
+            font-size: 16px;
+            margin-bottom: 5px;
+            font-family: 'PodiumSharp', Arial, sans-serif;
+            color: white;
+            text-align: center;
+        }
+
+        #win-content {
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .win-item {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;  /* 减小间距 */
+            width: 100%;
+            height: 60px;
+        }
+
+        .win-item img {
+            width: 50px;
+            height: 50px;
+            object-fit: contain;
+            filter: brightness(0) invert(1);
+        }
+
+        /* 恢复数字相关的样式 */
+        .win-item span {
+            display: inline-block;
+            font-family: 'PodiumSharp', Arial, sans-serif;
+            font-size: 23px;
+            color: white;
+            line-height: 1;
+        }
+
+        .win-item .waiting {
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* 添加一个包裹容器 */
+        .game-container {
+            position: fixed;
+            width: 1920px;
+            height: 1080px;
+            left: 50%;
+            top: 50%;
+            transform-origin: center;
+        }
+
+        .slot-machine {
+            position: absolute;
+            width: 800px;
+            height: 800px;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        /* 确保信息显示区域在最上层 */
+        .prize-stats, .win-info {
+        }
+
+        /* 添加特定的槽位样式 */
+        #fruit-slot {
+        }
+
+        #prize-slot {
+        }
+
+        /* 移除所有光效相关的样式 */
+        .slot.spinning {
+            /* 移除所有动画和光效 */
+        }
+
+        .slot.spinning::before {
+            /* 移除 */
+        }
+
+        @keyframes winFlash {
+            /* 移除 */
+        }
+
+        .slot.win-flash {
+            /* 移除 */
+        }
+
+        @keyframes pulse {
+            /* 移除 */
+        }
+
+        /* 添加闪烁光效样式 */
+        @keyframes stopFlash {
+            0% {
+                box-shadow: 0 0 15px rgba(255, 215, 0, 0);  /* 完全透明 */
+            }
+            50% {
+                box-shadow: 0 0 30px rgba(255, 215, 0, 1);  /* 完全不透明 */
+            }
+            100% {
+                box-shadow: 0 0 15px rgba(255, 215, 0, 0);  /* 完全透明 */
+            }
+        }
+
+        .slot.stop-flash {
+            animation: stopFlash 0.5s ease-out;
+        }
+
+        /* 添加灯光样式 */
+        .machine-lights {
+            position: absolute;
+            top: 15%;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 80px;
+            z-index: 2;
+        }
+
+        .light {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #333;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+            transition: all 0.3s ease;
+        }
+
+        /* 灯光闪烁动画 */
+        @keyframes lightBlink {
+            0% { 
+                background: #333;
+                box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+            }
+            50% { 
+                background: #ff69b4;
+                box-shadow: 0 0 15px #ff69b4;
+            }
+            100% { 
+                background: #333;
+                box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+            }
+        }
+
+        /* 添加闪烁类 */
+        .light.blinking {
+            animation: lightBlink 0.5s infinite;
+        }
+
+        /* 错开动画时间 */
+        .light.blinking:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .light.blinking:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        .light-box {
+            width: 40px;
+            height: 40px;
+            background: #FFA500;  /* 橙黄色 */
+            box-shadow: 0 0 10px rgba(255, 165, 0, 0.5);
+        }
+
+        @keyframes boxBlink {
+            0% { 
+                opacity: 0.3;
+                box-shadow: 0 0 10px rgba(255, 165, 0, 0.3);
+            }
+            50% { 
+                opacity: 1;
+                box-shadow: 0 0 20px rgba(255, 165, 0, 1);
+            }
+            100% { 
+                opacity: 0.3;
+                box-shadow: 0 0 10px rgba(255, 165, 0, 0.3);
+            }
+        }
+
+        .light-box.blinking {
+            animation: boxBlink 0.5s infinite;
+        }
+
+        /* 错开动画时间 */
+        .light-box:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .light-box:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        /* 修改橙黄色方块的遮罩层 */
+        .light-overlay {
+            position: absolute;
+            top: -8%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 450px;
+            height: 40px;
+            display: flex;
+            justify-content: space-around;
+            z-index: 2;
+        }
+
+        .light-mask {
+            width: 60px;
+            height: 100px;
+            background: rgba(255, 255, 255, 0.5);
+            mix-blend-mode: overlay;
+        }
+
+        @keyframes maskBlink {
+            0% { opacity: 0; }
+            50% { opacity: 0.5; }
+            100% { opacity: 0; }
+        }
+
+        .light-mask.blinking {
+            animation: maskBlink 0.5s infinite;
+        }
+
+        /* 错开动画时间 */
+        .light-mask:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .light-mask:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+    </style>
+</head>
+<body>
+    <!-- 添加包裹容器 -->
+    <div class="game-container">
+        <div class="slot-machine">
+            <div class="display-container">
+                <!-- 水果槽 -->
+                <div class="slot" id="fruit-slot">
+                    <div class="content"></div>
+                </div>
+                
+                <!-- 数字槽 -->
+                <div class="slot" id="number-slot">
+                    <div class="content"></div>
+                </div>
+                
+                <!-- 奖品槽 -->
+                <div class="slot" id="prize-slot">
+                    <div class="content"></div>
+                </div>
+            </div>
+
+            <div class="lever">
+                <img src="lever.png" alt="拉杆">
+            </div>
+        </div>
+
+        <div class="prize-stats">
+            <div id="prize-counts"></div>
+            <div class="total-count">
+                剩余次数: <span id="total-count">99</span>
+            </div>
+        </div>
+
+        <div class="win-info">
+            <div class="win-info-title">中奖信息</div>
+            <div id="win-content"></div>
+        </div>
+    </div>
+
+    <script>
+        // 修改水果数组和奖品数组为实际图片
+        const fruits = [
+            'fruit1.png',
+            'fruit2.png',
+            'fruit3.png',
+            'fruit4.png',
+            'fruit5.png'
+        ];
+        
+        // 修改奖品数组的定义，改为对象数组以跟踪每个奖品的剩余数量
+        let prizePool = [
+            { id: 'prize1.png', count: 40 },
+            { id: 'prize2.png', count: 20 },
+            { id: 'prize3.png', count: 10 },
+            { id: 'prize4.png', count: 10 },
+            { id: 'prize5.png', count: 10 },
+            { id: 'prize6.png', count: 5 },
+            { id: 'prize7.png', count: 3 },
+            { id: 'prize8.png', count: 1 }
+        ];
+
+        const numbers = Array.from({length: 111}, (_, i) => String(i + 1).padStart(3, '0'));
+
+        let isSpinning = false;
+
+        function createSlotContent(items, isNumber = false) {
+            const tripleItems = [...items, ...items, ...items];
+            
+            return tripleItems.map(item => {
+                if (isNumber) {
+                    return `<div style="color: #000000; font-size: 30px; font-weight: bold; font-family: 'PodiumSharp', Arial, sans-serif;">${item}</div>`;
+                } else {
+                    return `<img src="${item}" alt="item" style="width: 100px; height: 100px; object-fit: contain;">`;
+                }
+            }).join('');
+        }
+
+        // 添加一个函数来生成完整的奖品序列
+        function generateFullPrizeSequence() {
+            let sequence = [];
+            prizePool.forEach(prize => {
+                for (let i = 0; i < prize.count; i++) {
+                    sequence.push(prize.id);
+                }
+            });
+            // 打乱序列
+            return sequence.sort(() => Math.random() - 0.5);
+        }
+
+        // 保存当前的奖品序列
+        let currentPrizeSequence = [];
+
+        // 在页面加载时初始化奖品序列
+        window.addEventListener('load', () => {
+            currentPrizeSequence = generateFullPrizeSequence();
+            const fruitSlot = document.querySelector('#fruit-slot .content');
+            const numberSlot = document.querySelector('#number-slot .content');
+            const prizeSlot = document.querySelector('#prize-slot .content');
+
+            fruitSlot.innerHTML = createSlotContent(fruits.slice(0, 3));
+            numberSlot.innerHTML = createSlotContent(numbers.slice(0, 3), true);
+            prizeSlot.innerHTML = createSlotContent(getAvailablePrizes().slice(0, 3));
+            updatePrizeDisplay();
+            
+            // 初始化时显示空白的中奖信息
+            const winContent = document.getElementById('win-content');
+            winContent.innerHTML = `
+                <div class="win-item">
+                    <div class="waiting">
+                        <span style="color: rgba(255, 255, 255, 0.5);">等待抽奖...</span>
+                    </div>
+                </div>
+            `;
+        });
+
+        // 添加一个函数来获取当前可用的奖品数组
+        function getAvailablePrizes() {
+            let available = [];
+            prizePool.forEach(prize => {
+                for (let i = 0; i < prize.count; i++) {
+                    available.push(prize.id);
+                }
+            });
+            return available;
+        }
+
+        // 添加一个函数来减少奖品数量
+        function decreasePrizeCount(prizeId) {
+            const prize = prizePool.find(p => p.id === prizeId);
+            if (prize && prize.count > 0) {
+                prize.count--;
+                return true;
+            }
+            return false;
+        }
+
+        // 添加更新中奖信息的函数
+        function updateWinInfo(fruit, number, prize) {
+            const winContent = document.getElementById('win-content');
+            winContent.innerHTML = `
+                <div class="win-item">
+                    <img src="${fruit}" alt="水果">
+                    <span>+</span>
+                    <span style="font-family: 'PodiumSharp', Arial, sans-serif; font-size: 23px;">${number}</span>
+                    <span>+</span>
+                    <img src="${prize}" alt="奖品">
+                </div>
+            `;
+        }
+
+        // 修改 spin 函数
+        function spin() {
+            if (isSpinning) return;
+            
+            // 添加抽奖开始的音效（可选）
+            const startSound = new Audio('start.mp3');  // 需要准备音效文件
+            startSound.play().catch(e => console.log('Audio play failed:', e));
+            
+            const totalRemaining = currentPrizeSequence.length;
+            if (totalRemaining === 0) {
+                alert('奖品已抽完！');
+                return;
+            }
+
+            isSpinning = true;
+
+            // 确定最终结果
+            const fruitResult = fruits[Math.floor(Math.random() * fruits.length)];
+            const numberResult = numbers[Math.floor(Math.random() * numbers.length)];
+            const prizeIndex = Math.floor(Math.random() * currentPrizeSequence.length);
+            const prizeResult = currentPrizeSequence[prizeIndex];
+            
+            // 从序列中移除选中的奖品
+            currentPrizeSequence.splice(prizeIndex, 1);
+            decreasePrizeCount(prizeResult);
+
+            const slots = document.querySelectorAll('.slot');
+            slots.forEach((slot, index) => {
+                const content = slot.querySelector('.content');
+                
+                if (index === 0) {
+                    // 水果槽 - 循环显示所有水果
+                    let fruitSequence = [];
+                    for (let i = 0; i < 10; i++) { // 重复10次
+                        fruitSequence = fruitSequence.concat(fruits);
+                    }
+                    // 确保结果在最后
+                    fruitSequence = fruitSequence.concat([
+                        fruits[(fruits.indexOf(fruitResult) - 1 + fruits.length) % fruits.length],
+                        fruitResult,
+                        fruits[(fruits.indexOf(fruitResult) + 1) % fruits.length]
+                    ]);
+                    content.innerHTML = fruitSequence.map(fruit => 
+                        `<img src="${fruit}" alt="水果" style="width: 100px; height: 100px; object-fit: contain;">`
+                    ).join('');
+                } else if (index === 1) {
+                    // 数字槽 - 循环显示所有数字
+                    let numberSequence = [];
+                    for (let i = 0; i < 3; i++) {
+                        numberSequence = numberSequence.concat(numbers);
+                    }
+                    // 确保结果在最后
+                    const numberIndex = numbers.indexOf(numberResult);
+                    numberSequence = numberSequence.concat([
+                        numbers[(numberIndex - 1 + numbers.length) % numbers.length],
+                        numberResult,
+                        numbers[(numberIndex + 1) % numbers.length]
+                    ]);
+                    content.innerHTML = numberSequence.map(number => 
+                        `<div style="color: #000000; font-size: 27px; font-weight: bold; font-family: 'PodiumSharp', Arial, sans-serif;">${number}</div>`
+                    ).join('');
+                } else {
+                    // 奖品槽 - 循环显示所有奖品
+                    const uniquePrizes = Array.from(new Set(currentPrizeSequence));
+                    let prizeSequence = [];
+                    for (let i = 0; i < 5; i++) { // 重复5次
+                        prizeSequence = prizeSequence.concat(uniquePrizes);
+                    }
+                    // 确保结果在最后
+                    const adjacentPrizes = getAdjacentPrizes(prizeResult);
+                    prizeSequence = prizeSequence.concat([
+                        adjacentPrizes.prev,
+                        prizeResult,
+                        adjacentPrizes.next
+                    ]);
+                    content.innerHTML = prizeSequence.map(prize => 
+                        `<img src="${prize}" alt="奖品" style="width: 100px; height: 100px; object-fit: contain;">`
+                    ).join('');
+                }
+                
+                slot.classList.add('spinning');
+            });
+
+            // 停止动画并显示结果
+            const stopTimes = [
+                1000 + Math.random() * 500,
+                1500 + Math.random() * 500,
+                2000 + Math.random() * 500
+            ];
+
+            stopTimes.forEach((time, index) => {
+                setTimeout(() => {
+                    const slot = slots[index];
+                    slot.classList.remove('spinning');
+                    
+                    // 修改停止时的显示内容
+                    const content = slot.querySelector('.content');
+                    if (index === 0) {
+                        const prevIndex = (fruits.indexOf(fruitResult) - 1 + fruits.length) % fruits.length;
+                        const nextIndex = (fruits.indexOf(fruitResult) + 1) % fruits.length;
+                        content.innerHTML = `
+                            <img src="${fruits[prevIndex]}" alt="水果" style="width: 73px; height: 73px; object-fit: contain;">
+                            <img src="${fruitResult}" alt="水果" style="width: 73px; height: 73px; object-fit: contain;">
+                            <img src="${fruits[nextIndex]}" alt="水果" style="width: 73px; height: 73px; object-fit: contain;">
+                        `;
+                    } else if (index === 1) {
+                        // 修改数字槽停止时的显示
+                        const numberIndex = numbers.indexOf(numberResult);
+                        const prevNumber = numbers[(numberIndex - 1 + numbers.length) % numbers.length];
+                        const nextNumber = numbers[(numberIndex + 1) % numbers.length];
+                        content.innerHTML = `
+                            <div style="color: #000000; font-size: 27px; font-weight: bold; font-family: 'PodiumSharp', Arial, sans-serif;">${prevNumber}</div>
+                            <div style="color: #000000; font-size: 27px; font-weight: bold; font-family: 'PodiumSharp', Arial, sans-serif;">${numberResult}</div>
+                            <div style="color: #000000; font-size: 27px; font-weight: bold; font-family: 'PodiumSharp', Arial, sans-serif;">${nextNumber}</div>
+                        `;
+                    } else {
+                        const adjacentPrizes = getAdjacentPrizes(prizeResult);
+                        content.innerHTML = `
+                            <img src="${adjacentPrizes.prev}" alt="奖品" style="width: 73px; height: 73px; object-fit: contain;">
+                            <img src="${prizeResult}" alt="奖品" style="width: 73px; height: 73px; object-fit: contain;">
+                            <img src="${adjacentPrizes.next}" alt="奖品" style="width: 73px; height: 73px; object-fit: contain;">
+                        `;
+                    }
+                    
+                    if (index === 2) {
+                        updateWinInfo(fruitResult, numberResult, prizeResult);
+                        isSpinning = false;
+                        updatePrizeDisplay();
+                    }
+                }, time);
+            });
+        }
+
+        // 创建一个函数来获取不重复的相邻奖品
+        function getAdjacentPrizes(currentPrize) {
+            // 获取原始奖品列表（不重复）
+            const uniquePrizes = [
+                'prize1.png',
+                'prize2.png',
+                'prize3.png',
+                'prize4.png',
+                'prize5.png',
+                'prize6.png',
+                'prize7.png',
+                'prize8.png'
+            ];
+            
+            // 获取当前奖品的索引
+            const currentIndex = uniquePrizes.indexOf(currentPrize);
+            
+            // 获取前一个奖品
+            const prevIndex = (currentIndex - 1 + uniquePrizes.length) % uniquePrizes.length;
+            // 获取后一个奖品
+            const nextIndex = (currentIndex + 1) % uniquePrizes.length;
+            
+            return {
+                prev: uniquePrizes[prevIndex],
+                next: uniquePrizes[nextIndex]
+            };
+        }
+
+        // 添加点击事件
+        document.querySelector('.slot-machine').addEventListener('click', spin);
+
+        // 添加更新显示的函数
+        function updatePrizeDisplay() {
+            const prizeCountsDiv = document.getElementById('prize-counts');
+            const totalCountSpan = document.getElementById('total-count');
+            
+            // 更新奖品显示，不显示数量
+            prizeCountsDiv.innerHTML = prizePool.map(prize => `
+                <div class="prize-count-item">
+                    <img src="${prize.id}" alt="奖品${prize.id.replace('prize', '').replace('.png', '')}">
+                </div>
+            `).join('');
+            
+            // 更新总剩余次数
+            const totalRemaining = prizePool.reduce((sum, prize) => sum + prize.count, 0);
+            totalCountSpan.textContent = totalRemaining;
+        }
+
+        // 修改缩放处理函数
+        function handleResize() {
+            const container = document.querySelector('.game-container');
+            const baseWidth = 1920;
+            const baseHeight = 1080;
+            
+            const windowWidth = window.innerWidth;
+            const windowHeight = window.innerHeight;
+            
+            // 计算缩放比例，使用背景图的比例
+            const bgRatio = baseWidth / baseHeight;
+            const windowRatio = windowWidth / windowHeight;
+            
+            let scale;
+            if (windowRatio > bgRatio) {
+                // 如果窗口更宽，使用高度作为基准
+                scale = windowHeight / baseHeight;
+            } else {
+                // 如果窗口更窄，使用宽度作为基准
+                scale = windowWidth / baseWidth;
+            }
+            
+            // 应用缩放
+            container.style.transform = `translate(-50%, -50%) scale(${scale})`;
+        }
+
+        // 添加窗口大小变化监听
+        window.addEventListener('resize', handleResize);
+        // 初始化时调用一次
+        window.addEventListener('load', handleResize);
+
+        // 添加查看剩余奖品的函数
+        function checkRemainingPrizes() {
+            console.table(prizePool.map(prize => ({
+                奖品: prize.id.replace('prize', '奖品').replace('.png', ''),
+                剩余数量: prize.count
+            })));
+            
+            const totalRemaining = prizePool.reduce((sum, prize) => sum + prize.count, 0);
+            console.log('总剩余数量:', totalRemaining);
+            
+            return {
+                详细信息: prizePool,
+                总剩余数量: totalRemaining
+            };
+        }
+
+        // 添加查看当前奖品序列的函数
+        function checkCurrentSequence() {
+            console.log('当前奖品序列:', currentPrizeSequence);
+            return currentPrizeSequence;
+        }
+    </script>
+</body>
+</html>
